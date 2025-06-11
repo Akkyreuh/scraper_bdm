@@ -107,13 +107,13 @@ def fetch_article_details(article_url):
             if byline_span:
                 author = byline_span.get_text(strip=True)
         
-        content_div = soup.find('div', class_='article-content')
+        content_div = soup.find('div', class_='entry-content row justify-content-center')
         content_text = None
         if content_div:
-            for script in content_div.find_all(['script', 'style', 'iframe', 'form']):
-                script.decompose()
-            paragraphs = content_div.find_all(['p', 'h2', 'h3', 'h4', 'ul', 'ol', 'li'])
-            content_text = ' '.join([p.get_text(strip=True) for p in paragraphs])
+            for tag in content_div.find_all(['script', 'style', 'iframe', 'form']):
+                tag.decompose()
+            p_tags = content_div.find_all('p')
+            content_text = ' '.join([p.get_text(" ", strip=True) for p in p_tags if p.get_text(strip=True)])
             content_text = re.sub(r'\s+', ' ', content_text).strip()
         
         images = {}
