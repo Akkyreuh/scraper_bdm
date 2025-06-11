@@ -43,15 +43,17 @@ def fetch_articles(url, category):
             formatted_date = None
             if date_text:
                 try:
-                    months = {'janvier': '01', 'février': '02', 'mars': '03', 'avril': '04', 'mai': '05', 'juin': '06', 
-                              'juillet': '07', 'août': '08', 'septembre': '09', 'octobre': '10', 'novembre': '11', 'décembre': '12'}
+                    months = {
+                        'janvier': '01', 'février': '02', 'mars': '03', 'avril': '04', 'mai': '05', 'juin': '06', 
+                        'juillet': '07', 'août': '08', 'septembre': '09', 'octobre': '10', 'novembre': '11', 'décembre': '12'
+                    }
                     parts = date_text.split()
                     if len(parts) >= 3:
                         day = parts[0].zfill(2)
                         month = months.get(parts[1].lower())
                         year = parts[2]
                         if day and month and year:
-                            formatted_date = f"{year}{month}{day}"
+                            formatted_date = f"{year}/{month}/{day}"
                 except:
                     formatted_date = None
 
