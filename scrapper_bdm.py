@@ -12,7 +12,6 @@ def fetch_articles(url, category):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     }
-
     try:
         response = requests.get(url, headers=headers)
         response.raise_for_status()
@@ -21,7 +20,6 @@ def fetch_articles(url, category):
         articles_data = []
 
         main_tag = soup.find('main')
-
         articles = main_tag.find_all('article')
         for article in articles:
             img_div = article.find('div', class_='post-thumbnail picture rounded-img')
@@ -69,7 +67,7 @@ def fetch_articles(url, category):
                 'date': formatted_date,
                 'author': article_content.get('author'),
                 'content': article_content.get('content'),
-                'article_images': article_content.get('article_images', []),
+                'article_images': article_content.get('article_images', {}),
                 'url': article_url,
                 'category': category
             }
@@ -93,22 +91,27 @@ def fetch_article_details(article_url):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     }
-    
     try:
         response = requests.get(article_url, headers=headers)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         
+        author = None
         author_div = soup.find('div', class_='author-meta')
-        author = author_div.find('a', class_='author-name').get_text(strip=True) if author_div else None
+        if author_div:
+            a_tag = author_div.find('a', class_='author-name')
+            if a_tag:
+                author = a_tag.get_text(strip=True)
+        if not author:
+            byline_span = soup.find('span', class_='byline')
+            if byline_span:
+                author = byline_span.get_text(strip=True)
         
         content_div = soup.find('div', class_='article-content')
         content_text = None
-        
         if content_div:
-            for script in content_div.find_all(['script', 'style', 'iframe']):
+            for script in content_div.find_all(['script', 'style', 'iframe', 'form']):
                 script.decompose()
-                
             paragraphs = content_div.find_all(['p', 'h2', 'h3', 'h4', 'ul', 'ol', 'li'])
             content_text = ' '.join([p.get_text(strip=True) for p in paragraphs])
             content_text = re.sub(r'\s+', ' ', content_text).strip()
@@ -116,18 +119,14 @@ def fetch_article_details(article_url):
         images = {}
         if content_div:
             figure_tags = content_div.find_all('figure')
-            
-            for i, figure in enumerate(figure_tags):
+            for figure in figure_tags:
                 img_tag = figure.find('img')
                 if img_tag:
                     img_url = extract_img_url(img_tag)
-                    
                     figcaption = figure.find('figcaption')
                     caption = figcaption.get_text(strip=True) if figcaption else None
-                    
                     if not caption and img_tag.has_attr('alt'):
                         caption = img_tag['alt']
-                    
                     if img_url:
                         images[img_url] = caption
         
@@ -147,7 +146,7 @@ def extract_img_url(img_tag):
     for attr in ['data-lazy-src', 'data-src', 'src']:
         if img_tag.has_attr(attr):
             url = img_tag[attr]
-            if url.startswith('https://'):
+            if url.startswith('http'):
                 return url
     return None
 
